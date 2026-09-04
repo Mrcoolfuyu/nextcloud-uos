@@ -1,0 +1,15 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Nextcloud Desktop
+Name[zh_CN]=Nextcloud 桌面客户端
+GenericName=File Synchronizer
+GenericName[zh_CN]=文件同步
+Comment=Nextcloud desktop synchronization client
+Comment[zh_CN]=与 Nextcloud 服务器同步文件
+Exec=/opt/nextcloud/bin/nextcloud-uos.sh
+Icon=nextcloud
+Terminal=false
+Categories=Network;FileTransfer;Utility;
+StartupNotify=false
+StartupWMClass=nextcloud
