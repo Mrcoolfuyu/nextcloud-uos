@@ -1,28 +1,40 @@
 # Nextcloud Desktop for UOS（统信 UOS aarch64 源码编译与隔离部署）
 
-在 **统信 UOS 20（aarch64，飞腾/鲲鹏等 ARM 平台）** 上，从源码编译 **Nextcloud Desktop 3.13.x** 并隔离部署的完整方案。重点解决系统自带 Qt 5.11 与 Nextcloud 3.x 不兼容、以及无 GPU 环境下 QML 主窗口白屏等问题。
+在 **统信 UOS 20（aarch64，飞腾/鲲鹏等 ARM 平台）** 上运行的 **Nextcloud Desktop 3.13.x** 独立 deb 安装包，附完整源码编译方案。重点解决系统自带 Qt 5.11 与 Nextcloud 3.x 不兼容、以及无 GPU 环境下 QML 主窗口白屏等问题。
 
-## 为什么需要它
+## 使用方法
 
-- UOS 20 自带 Qt 5.11.3（深度定制 DTK 版本），而 Nextcloud Desktop 3.x 需要 Qt ≥ 5.15；apt 源里只有 2.5.1 的旧客户端，无法满足。
-- 直接升级系统 Qt 会破坏 DDE 桌面环境。
-- 因此采用 **隔离编译**：自编 Qt 5.15.2 装到 `/opt/qt515`，Nextcloud 装到 `/opt/nextcloud`，运行时通过启动器隔离，不污染系统 Qt。
+从 [Releases](https://github.com/Mrcoolfuyu/nextcloud-uos/releases) 下载 deb 包，在 UOS aarch64 机器上直接安装即可：
+
+```bash
+sudo apt install ./nextcloud_3.13.4.0_arm64_v1.0.deb
+```
+
+或经 UOS 软件商店 / 双击 deb 安装（均自动安装依赖）。
+
+安装完成后：
+
+- 桌面自动生成 **nextcloud** 启动器图标，双击打开
+- 首次启动输入你的 Nextcloud 服务器地址、账号，选择同步目录即可
+
+卸载：`sudo apt remove com.cnraft.nextcloud`（桌面图标自动清理）。
 
 ## 特性
 
-- **隔离部署**：自编 Qt 5.15.2 + Nextcloud 3.13.4git，安装于 `/opt`，不影响系统 Qt 5.11 / DDE。
-- **中文界面**：补编 `qttools` 模块以生成 `client_zh_CN.qm`。
-- **无 GPU 适配**：通过 Mesa llvmpipe 软件 GL 渲染主窗口，避开 `QtGraphicalEffects` 着色器在软件 QML 后端下白屏的问题。
-- **启动器隔离**：自动设置 `LD_LIBRARY_PATH` / `QT_PLUGIN_PATH` / `QML2_IMPORT_PATH`，并对 Wayland+XWayland 环境做 `DISPLAY` 兜底。
+- **免编译直接装**：deb 自带 Qt 5.15.2 运行时，装完即用
+- **隔离部署**：安装在 `/opt/apps/com.cnraft.nextcloud/`，不影响系统 Qt 5.11 / DDE 桌面
+- **中文界面**：补编 `qttools` 模块生成 `client_zh_CN.qm`
+- **无 GPU 适配**：通过 Mesa llvmpipe 软件 GL 渲染主窗口，避开 `QtGraphicalEffects` 着色器在软件 QML 后端下白屏的问题
+- **桌面图标**：`postinst` 自动为每个真实用户（uid≥1000）生成桌面图标，`postrm` 卸载时自动清理
+- **依赖完整**：`Depends` 由 ldd → dpkg 实算生成（76 个包，含 X11/xcb 全家桶、libgl1、fontconfig、libssl1.1），`apt install` 时自动补齐
 
 ## 环境要求
 
 | 项目 | 规格 |
 | --- | --- |
 | 系统 | 统信 UOS 20（aarch64） |
-| 编译器 | gcc 8.3（C++17 需显式链接 `libstdc++fs`） |
-| 磁盘 | `/opt` 所在分区 ≥ 2GB 可用；构建中间产物另占约 5GB（建议放 `/home`） |
-| 服务端 | Nextcloud（本方案对接 `https://home.cnraft.com:9443`，最低支持桌面端 3.2.50，3.13 满足） |
+| 安装方式 | `apt install ./xxx.deb` / 软件商店 / 双击安装 |
+| 服务端 | 任意 Nextcloud 实例（服务端最低支持桌面端 3.2.50，3.13 满足） |
 
 ## 目录结构
 
@@ -45,14 +57,15 @@ nextcloud-uos/
 │   ├── 13-rebuild-qtbase-xcb.sh
 │   ├── 14-build-nc.sh
 │   └── 16-build-websockets.sh
-├── scripts/                  # 完整过程脚本（含诊断/验证，共 37 个）
+├── scripts/                  # 完整过程脚本（含诊断/验证）
+├── packaging/                # UOS 规范打包脚本
 ├── README.md
 └── LICENSE                   # MIT
 ```
 
-## 使用方法
+## 从源码构建（可选）
 
-在目标 UOS 主机上（需有 sudo 权限的普通用户）：
+deb 已可直接安装；如需自行编译，在目标 UOS 主机上（需有 sudo 权限的普通用户）：
 
 ```bash
 # 1. 将 build/ 上传到目标机，例如 /home/<user>/ncbuild
@@ -72,14 +85,6 @@ bash build/14-build-nc.sh
 bash build/10-setup-launcher.sh
 ```
 
-完成后双击桌面「Nextcloud」图标，或在终端执行：
-
-```bash
-/opt/nextcloud/bin/nextcloud-uos.sh
-```
-
-登录服务器，输入账号、选择同步目录，完成首次同步。
-
 ## 已知坑（已解决，记录于脚本注释）
 
 1. **xcb 平台插件缺失**：漏装 `libx11-xcb-dev` 会导致 Qt 编出但无 `libqxcb.so`，GUI 起不来 → 补全依赖后重编 qtbase。
@@ -88,35 +93,16 @@ bash build/10-setup-launcher.sh
 4. **主窗口白屏（QML）**：`QtGraphicalEffects` 着色器在 `QT_QUICK_BACKEND=software` + `QT_XCB_GL_INTEGRATION=none` 下不实现 → 改用 Mesa 软件 GL（`LIBGL_ALWAYS_SOFTWARE=1`），不禁用 GL 集成。
 5. **单实例保护**：新实例报 `Already running, exiting...` 是正常行为，非崩溃。
 
-## UOS 商店打包
+## 打包说明
 
-按统信应用打包规范（UOS Packaging Specification v1.2）打包为标准 deb：
+按统信应用打包规范（UOS Packaging Specification v1.2）打包为标准 deb（约 31MB，安装后约 160MB）：
 
-```
-com.cnraft.nextcloud_3.13.4.0_arm64.deb   （约 31MB，安装后约 160MB）
-```
-
-- 结构：`/opt/apps/com.cnraft.nextcloud/{entries,files,info}`，无 postinst 钩子，不修改系统目录
+- 结构：`/opt/apps/com.cnraft.nextcloud/{entries,files,info}`
 - `files/qt/` 自带 Qt 5.15.2 运行时；`files/nextcloud/` 为客户端本体；`qt.conf` 使用相对路径，包可重定位
 - `info` JSON：appid / name / version / arch(arm64) / permissions（trayicon、notification）
-- `Depends` 由 ldd → dpkg-query 实算（含 usr-merge 路径回退），覆盖 X11/xcb/GL/fontconfig/ssl 等全部真实依赖
-- 安装时由 UOS 的 `deepin-app-store` 触发器自动把 `entries/` 软链接到 `/usr/share/applications`
-
-一键打包脚本见 `packaging/package-uos.sh`（在目标 UOS 机器上执行）。
+- 应用入口与图标统一按 appid 命名，由 UOS 的 `deepin-app-store` 触发器自动符号链接进系统菜单与 hicolor 图标主题
+- 一键打包脚本见 `packaging/`
 
 ## 许可证
 
-[MIT](LICENSE) 
-
-## 安装与桌面图标
-
-- 安装后由 `postinst` 自动为每个真实用户（uid>=1000）在桌面生成 `nextcloud.desktop` 启动器图标（显示名 `nextcloud`），卸载时 `postrm` 自动清理。
-- 应用入口与图标统一按 appid 命名（`com.cnraft.nextcloud`），由 UOS 的 deepin-app-store 触发器自动符号链接进系统菜单与 hicolor 图标主题，任何 UOS 机器上都能正确显示。
-
-## 依赖安装说明
-
-包内 `Depends` 字段由 ldd + dpkg 实算生成（76 个包，含 X11/xcb 全家桶、libgl1、fontconfig、libssl1.1 等）：
-
-- `sudo apt install ./com.cnraft.nextcloud_3.13.4.0_arm64.deb` 或经 UOS 软件商店/双击安装：**自动安装全部依赖**
-- `sudo dpkg -i xxx.deb`：不解析依赖，缺库会报错，补一句 `sudo apt -f install` 即可
-- 仅适用于 arm64 架构机器
+[MIT](LICENSE) © 2026 Mrcoolfuyu
