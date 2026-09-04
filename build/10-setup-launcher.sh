@@ -47,7 +47,7 @@ if [ -z "${DISPLAY:-}" ]; then
 fi
 export XAUTHORITY="${XAUTHORITY:-$HOME/.Xauthority}"
 
-exec /opt/nextcloud/bin/nextcloud "$@"
+exec -a "$0" /opt/nextcloud/bin/nextcloud "$@"
 EOS
 chmod +x "$NC/bin/nextcloud-uos.sh" || die "chmod 失败"
 
