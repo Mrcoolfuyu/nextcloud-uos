@@ -7,7 +7,7 @@
 从 [Releases](https://github.com/Mrcoolfuyu/nextcloud-uos/releases) 下载 deb 包，在 UOS aarch64 机器上直接安装即可：
 
 ```bash
-sudo apt install ./nextcloud_3.13.4.0_arm64_v1.0.deb
+sudo apt install ./nextcloud_3.13.4.0_arm64_v1.1.deb
 ```
 
 或经 UOS 软件商店 / 双击 deb 安装（均自动安装依赖）。
