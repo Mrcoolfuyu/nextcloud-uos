@@ -78,7 +78,7 @@ bash build/10-setup-launcher.sh
 /opt/nextcloud/bin/nextcloud-uos.sh
 ```
 
-登录 `https://home.cnraft.com:9443`，输入账号、选择同步目录，完成首次同步。
+登录服务器，输入账号、选择同步目录，完成首次同步。
 
 ## 已知坑（已解决，记录于脚本注释）
 
