@@ -107,3 +107,16 @@ com.cnraft.nextcloud_3.13.4.0_arm64.deb   （约 31MB，安装后约 160MB）
 ## 许可证
 
 [MIT](LICENSE) © 2026 傅宇 / Mrcoolfuyu
+
+## 安装与桌面图标
+
+- 安装后由 `postinst` 自动为每个真实用户（uid>=1000）在桌面生成 `nextcloud.desktop` 启动器图标（显示名 `nextcloud`），卸载时 `postrm` 自动清理。
+- 应用入口与图标统一按 appid 命名（`com.cnraft.nextcloud`），由 UOS 的 deepin-app-store 触发器自动符号链接进系统菜单与 hicolor 图标主题，任何 UOS 机器上都能正确显示。
+
+## 依赖安装说明
+
+包内 `Depends` 字段由 ldd + dpkg 实算生成（76 个包，含 X11/xcb 全家桶、libgl1、fontconfig、libssl1.1 等）：
+
+- `sudo apt install ./com.cnraft.nextcloud_3.13.4.0_arm64.deb` 或经 UOS 软件商店/双击安装：**自动安装全部依赖**
+- `sudo dpkg -i xxx.deb`：不解析依赖，缺库会报错，补一句 `sudo apt -f install` 即可
+- 仅适用于 arm64 架构机器
