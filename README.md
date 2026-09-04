@@ -90,7 +90,19 @@ bash build/10-setup-launcher.sh
 
 ## UOS 商店打包
 
-按统信应用商店规范，以 `/opt/apps/<appid>/` 结构组织（`entries/` + `files/` + `info`），appid 采用反向域名（如 `com.cnraft.localsend`）。详见 `scripts/` 中的打包相关说明与 `应用打包规范`。
+按统信应用打包规范（UOS Packaging Specification v1.2）打包为标准 deb：
+
+```
+com.cnraft.nextcloud_3.13.4.0_arm64.deb   （约 31MB，安装后约 160MB）
+```
+
+- 结构：`/opt/apps/com.cnraft.nextcloud/{entries,files,info}`，无 postinst 钩子，不修改系统目录
+- `files/qt/` 自带 Qt 5.15.2 运行时；`files/nextcloud/` 为客户端本体；`qt.conf` 使用相对路径，包可重定位
+- `info` JSON：appid / name / version / arch(arm64) / permissions（trayicon、notification）
+- `Depends` 由 ldd → dpkg-query 实算（含 usr-merge 路径回退），覆盖 X11/xcb/GL/fontconfig/ssl 等全部真实依赖
+- 安装时由 UOS 的 `deepin-app-store` 触发器自动把 `entries/` 软链接到 `/usr/share/applications`
+
+一键打包脚本见 `packaging/package-uos.sh`（在目标 UOS 机器上执行）。
 
 ## 许可证
 
