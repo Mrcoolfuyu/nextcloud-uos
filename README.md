@@ -106,7 +106,7 @@ com.cnraft.nextcloud_3.13.4.0_arm64.deb   （约 31MB，安装后约 160MB）
 
 ## 许可证
 
-[MIT](LICENSE) © 2026 傅宇 / Mrcoolfuyu
+[MIT](LICENSE) 
 
 ## 安装与桌面图标
 
